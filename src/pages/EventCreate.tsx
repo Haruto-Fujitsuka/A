@@ -6,7 +6,6 @@ export default function EventCreate() {
   const [title, setTitle] = useState("");
   const [dateTime, setDateTime] = useState("");
   const [capacity, setCapacity] = useState(10);
-  const [deadline, setDeadline] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -22,7 +21,6 @@ export default function EventCreate() {
           title,
           dateTime: new Date(dateTime).toISOString(),
           capacity: Number(capacity),
-          deadline: new Date(deadline).toISOString(),
         }),
       });
       if (!res.ok) {
@@ -48,8 +46,7 @@ export default function EventCreate() {
         <input type="datetime-local" value={dateTime} onChange={(e) => setDateTime(e.target.value)} required />
         <label>定員</label>
         <input type="number" min={1} value={capacity} onChange={(e) => setCapacity(Number(e.target.value))} required />
-        <label>回答締め切り</label>
-        <input type="datetime-local" value={deadline} onChange={(e) => setDeadline(e.target.value)} required />
+        <p>締め切りは開催日の前日23:59に自動設定されます。</p>
         {error && <p className="error">{error}</p>}
         <button type="submit" disabled={busy}>{busy ? "作成中..." : "作成"}</button>
       </form>

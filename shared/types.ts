@@ -33,6 +33,16 @@ export interface ResponseRecord {
   updatedAt: string;
 }
 
+export interface ResponseHistoryRecord {
+  id: string;
+  eventId: string;
+  name: string;
+  previousStatus: AttendanceStatus | null;
+  newStatus: AttendanceStatus;
+  changedBy: string;
+  changedAt: string;
+}
+
 export interface CreateEventInput {
   title: string;
   dateTime: string;

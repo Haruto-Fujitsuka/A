@@ -5,6 +5,7 @@ import {
   type Event,
   type EventWithCounts,
   type ResponseRecord,
+  type ResponseHistoryRecord,
 } from "../shared/types.js";
 
 type CreateEventInput = {
@@ -31,6 +32,7 @@ export interface EventStore {
   upsertResponse(eventId: string, name: string, status: AttendanceStatus): { ok: true; response: ResponseRecord } | { ok: false; error: string; status: number };
   getResponse(eventId: string, name: string): ResponseRecord | undefined;
   listResponses(eventId: string): ResponseRecord[];
+  listHistory(eventId: string): ResponseHistoryRecord[];
   counts(eventId: string): { attending: number; not_attending: number; undecided: number; total: number } | undefined;
 }
 
@@ -63,9 +65,18 @@ export function isValidDate(value: string): boolean {
   return !Number.isNaN(t);
 }
 
+export function fixedDeadline(dateTime: string): string {
+  const date = new Date(dateTime);
+  const deadline = new Date(date.getTime());
+  deadline.setDate(deadline.getDate() - 1);
+  deadline.setHours(23, 59, 59, 999);
+  return deadline.toISOString();
+}
+
 export function createMemoryStore(): EventStore {
   const events = new Map<string, Event>();
   const responses = new Map<string, ResponseRecord>(); // key eventId::name
+  const responseHistory: ResponseHistoryRecord[] = [];
 
   const key = (eventId: string, name: string) => `${eventId}::${name.trim().toLowerCase()}`;
 
@@ -82,7 +93,7 @@ export function createMemoryStore(): EventStore {
         title: input.title.trim(),
         dateTime: input.dateTime,
         capacity: input.capacity,
-        deadline: input.deadline,
+        deadline: fixedDeadline(input.dateTime),
         createdAt: now,
       };
       events.set(event.id, event);
@@ -122,6 +133,7 @@ export function createMemoryStore(): EventStore {
         }
         event.capacity = cap;
       }
+      event.deadline = fixedDeadline(event.dateTime);
       events.set(id, event);
       return { ok: true, event };
     },
@@ -152,6 +164,7 @@ export function createMemoryStore(): EventStore {
       }
       const existing = responses.get(k);
       const now = new Date().toISOString();
+      const previousStatus = existing?.status ?? null;
       const rec: ResponseRecord = {
         id: existing?.id ?? randomUUID(),
         eventId,
@@ -161,6 +174,17 @@ export function createMemoryStore(): EventStore {
         updatedAt: now,
       };
       responses.set(k, rec);
+      if (previousStatus !== status) {
+        responseHistory.push({
+          id: randomUUID(),
+          eventId,
+          name: name.trim(),
+          previousStatus,
+          newStatus: status,
+          changedBy: name.trim(),
+          changedAt: now,
+        });
+      }
       recompute(eventId);
       return { ok: true, response: rec };
     },
@@ -169,6 +193,11 @@ export function createMemoryStore(): EventStore {
     },
     listResponses(eventId) {
       return Array.from(responses.values()).filter((r) => r.eventId === eventId);
+    },
+    listHistory(eventId) {
+      return responseHistory
+        .filter((h) => h.eventId === eventId)
+        .sort((a, b) => Date.parse(a.changedAt) - Date.parse(b.changedAt));
     },
     counts(eventId) {
       const event = events.get(eventId);

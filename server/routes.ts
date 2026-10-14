@@ -8,7 +8,7 @@ const createEventSchema = z.object({
   title: z.string().min(1),
   dateTime: z.string().min(1),
   capacity: z.number().int().positive(),
-  deadline: z.string().min(1),
+  deadline: z.string().min(1).optional(),
 });
 
 const updateEventSchema = z.object({
@@ -48,10 +48,10 @@ export function createApi(store: EventStore): Hono {
       return c.json({ error: "invalid input", details: parsed.error.flatten() }, 400);
     }
     const { title, dateTime, capacity, deadline } = parsed.data;
-    if (!isValidDate(dateTime) || !isValidDate(deadline)) {
+    if (!isValidDate(dateTime)) {
       return c.json({ error: "invalid date" }, 400);
     }
-    const event = store.createEvent({ title, dateTime, capacity, deadline });
+    const event = store.createEvent({ title, dateTime, capacity, deadline: deadline ?? dateTime });
     return c.json(attachCounts(event), 201);
   };
 
@@ -155,6 +155,22 @@ export function createApi(store: EventStore): Hono {
     if (!counts) return c.json({ error: "event not found" }, 404);
     return c.json(counts);
   });
+
+  const historyHandler = (c: any) => {
+    const eventId = c.req.param("id");
+    const event = store.getEvent(eventId);
+    if (!event) return c.json({ error: "event not found" }, 404);
+    return c.json(store.listHistory(eventId));
+  };
+  const historyPaths = [
+    "/events/:id/history",
+    "/events/:id/responses/history",
+    "/events/:id/response-history",
+    "/events/:id/change-history",
+  ];
+  for (const p of historyPaths) {
+    app.get(p, historyHandler);
+  }
 
   // convenience: get a single person's response
   app.get("/events/:id/responses/:name", (c) => {
