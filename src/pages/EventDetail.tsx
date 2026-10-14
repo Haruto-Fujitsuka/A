@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import type { EventWithCounts, ResponseRecord } from "../../shared/types";
+import type { EventWithCounts, ResponseHistoryRecord, ResponseRecord } from "../../shared/types";
 
 const LABELS: Record<string, string> = {
   attending: "参加",
@@ -12,6 +12,7 @@ export default function EventDetail() {
   const { id } = useParams();
   const [event, setEvent] = useState<EventWithCounts | null>(null);
   const [responses, setResponses] = useState<ResponseRecord[]>([]);
+  const [history, setHistory] = useState<ResponseHistoryRecord[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [name, setName] = useState(() => localStorage.getItem("rsvp-name") || "");
   const [status, setStatus] = useState("attending");
@@ -29,6 +30,8 @@ export default function EventDetail() {
       setNewCapacity(ev.capacity);
       const rsRes = await fetch(`/api/events/${id}/responses`);
       if (rsRes.ok) setResponses(await rsRes.json());
+      const histRes = await fetch(`/api/events/${id}/history`);
+      if (histRes.ok) setHistory(await histRes.json());
     } catch (e: any) {
       setError(e.message || "読み込みに失敗しました");
     }
@@ -126,6 +129,18 @@ export default function EventDetail() {
           <input type="number" min={event.capacity} value={newCapacity} onChange={(e) => setNewCapacity(Number(e.target.value))} />
           <button type="submit" disabled={busy}>更新</button>
         </form>
+      </div>
+
+      <div className="card">
+        <h2>回答履歴（変更履歴）</h2>
+        <ul>
+          {history.map((h) => (
+            <li key={h.id}>
+              {new Date(h.changedAt).toLocaleString()} / {h.name}: {h.previousStatus ? LABELS[h.previousStatus] ?? h.previousStatus : "-"} → {LABELS[h.newStatus] ?? h.newStatus}（変更者: {h.changedBy}）
+            </li>
+          ))}
+        </ul>
+        {history.length === 0 && <p>まだ履歴がありません。</p>}
       </div>
 
       <div className="card">
