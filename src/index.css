@@ -1,0 +1,16 @@
+* { box-sizing: border-box; }
+body { font-family: system-ui, -apple-system, sans-serif; margin: 0; background: #f7f7f9; color: #222; }
+.app { max-width: 900px; margin: 0 auto; padding: 16px; }
+.header { display: flex; gap: 12px; align-items: center; padding: 12px 0; }
+.header a { text-decoration: none; color: #333; }
+.header a.primary { background: #2563eb; color: #fff; padding: 8px 12px; border-radius: 6px; }
+.card { background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; margin-bottom: 12px; }
+button { background: #2563eb; color: #fff; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; }
+button:disabled { opacity: 0.5; cursor: not-allowed; }
+input, select { padding: 8px; border: 1px solid #d1d5db; border-radius: 6px; width: 100%; margin-bottom: 8px; }
+label { display: block; font-size: 14px; margin-bottom: 4px; }
+.status { display: inline-block; padding: 2px 8px; border-radius: 4px; background: #eef2ff; margin-left: 6px; }
+.error { color: #dc2626; }
+.success { color: #16a34a; }
+ul { list-style: none; padding: 0; }
+li { padding: 6px 0; border-bottom: 1px solid #f0f0f0; }
